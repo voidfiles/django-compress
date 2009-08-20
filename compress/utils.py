@@ -53,7 +53,7 @@ def needs_update(output_file, source_files, verbosity=0):
     version = get_version(source_files)
     
     on = get_output_filename(output_file, version)
-    compressed_file_full = media_root(on)
+    compressed_file_full = compress_root(on)
 
     if not os.path.exists(compressed_file_full):
         return True, version
@@ -61,11 +61,17 @@ def needs_update(output_file, source_files, verbosity=0):
     update_needed = getattr(get_class(settings.COMPRESS_VERSIONING)(), 'needs_update')(output_file, source_files, version)
     return update_needed
 
-def media_root(filename):
+def compress_root(filename):
     """
-    Return the full path to ``filename``. ``filename`` is a relative path name in MEDIA_ROOT
+    Return the full path to ``filename``. ``filename`` is a relative path name in COMPRESS_ROOT
     """
-    filepath = os.path.join(django_settings.MEDIA_ROOT, filename)
+    return os.path.join(settings.COMPRESS_ROOT, filename)
+
+def compress_source(filename):
+    """
+    Return the full path to ``filename``. ``filename`` is a relative path name in COMPRESS_SOURCE
+    """
+    filepath = os.path.join(settings.COMPRESS_SOURCE, filename)
     if not os.path.exists(filepath):
         if staticmedia:
             try:
@@ -73,21 +79,13 @@ def media_root(filename):
             except staticmedia.StaticMediaNotFound:
                 pass
     return filepath
-
-def media_url(filename, prefix=None):
-    if prefix is not None:
-        if not prefix.endswith("/"):
-            prefix = prefix + "/"
-        return prefix + urlquote(filename)
-    if staticmedia:
-        try:
-            return staticmedia.url(filename)
-        except staticmedia.StaticMediaNotFound:
-            pass
-    prefix = django_settings.MEDIA_URL
+    
+def compress_url(filename, prefix=None):
+    if prefix is None:
+        prefix = django_settings.COMPRESS_URL
     if not prefix.endswith("/"):
         prefix = prefix + "/"
-    return prefix + urlquote(urlquote)
+    return prefix + urlquote(filename)
 
 def concat(filenames, separator=''):
     """
@@ -95,20 +93,17 @@ def concat(filenames, separator=''):
     """
     r = ''
     for filename in filenames:
-        fd = open(media_root(filename), 'rb')
+        fd = open(compress_source(filename), 'rb')
         r += fd.read()
         r += separator
         fd.close()
     return r
 
-def max_mtime(files):
-    return int(max([os.stat(media_root(f)).st_mtime for f in files]))
-
 def save_file(filename, contents):
-    dirname = os.path.dirname(media_root(filename))
+    dirname = os.path.dirname(compress_root(filename))
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-    fd = open(media_root(filename), 'wb+')
+    fd = open(compress_root(filename), 'wb+')
     fd.write(contents)
     fd.close()
 
@@ -145,7 +140,7 @@ def filter_common(obj, verbosity, filters, attr, separator, signal):
     filename = get_output_filename(obj['output_filename'], get_version(obj['source_filenames']))
 
     if settings.COMPRESS_VERSION:
-        remove_files(os.path.dirname(media_root(filename)), obj['output_filename'], verbosity)
+        remove_files(os.path.dirname(compress_root(filename)), obj['output_filename'], verbosity)
 
     if verbosity >= 1:
         print "Saving %s" % filename
