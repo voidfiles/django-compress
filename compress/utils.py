@@ -61,9 +61,11 @@ def media_root(filename):
     return os.path.join(django_settings.MEDIA_ROOT, filename)
 
 def media_url(url, prefix=None):
-    if prefix:
-        return prefix + urlquote(url)
-    return django_settings.MEDIA_URL + urlquote(url)
+    if not prefix:
+        prefix = django_settings.MEDIA_URL
+    if not prefix.endswith("/"):
+        prefix = prefix + "/"
+    return prefix + urlquote(url)
 
 def concat(filenames, separator=''):
     """
