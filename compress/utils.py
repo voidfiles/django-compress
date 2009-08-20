@@ -72,7 +72,6 @@ def media_root(filename):
                 filepath = staticmedia.path(filename)
             except staticmedia.StaticMediaNotFound:
                 pass
-    print "MEDIA_ROOT", filename, filepath
     return filepath
 
 def media_url(filename, prefix=None):
