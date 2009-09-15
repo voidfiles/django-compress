@@ -146,6 +146,7 @@ def filter_common(obj, verbosity, filters, attr, separator, signal):
         print "Saving %s" % filename
 
     for f in filters:
+        print f
         output = getattr(get_class(f)(verbose=(verbosity >= 2)), attr)(output)
 
     save_file(filename, output)
